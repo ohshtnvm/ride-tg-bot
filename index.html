@@ -20,6 +20,8 @@
   --drv: #0E8A7A;
   --exc: #7A4FD0;
   --safe: #D9483B;
+  --rush: #C9640F;
+  --storm: #3F6E8C;
   --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -37,6 +39,8 @@
     --drv: #3CC2AE;
     --exc: #A88BF0;
     --safe: #F07465;
+    --rush: #F29A4A;
+    --storm: #7FAED0;
     color-scheme: dark;
   }
 }
@@ -51,6 +55,8 @@
   --drv: #3CC2AE;
   --exc: #A88BF0;
   --safe: #F07465;
+    --rush: #F29A4A;
+    --storm: #7FAED0;
   color-scheme: dark;
 }
 
@@ -133,6 +139,55 @@ header p { margin: 0; color: var(--muted); }
 .chip.req { background: var(--bot); }
 .dash { width: 22px; border-top: 2px dashed var(--muted); }
 .dash.exc { border-top-color: var(--exc); }
+.chip.rush { background: var(--rush); }
+.chip.storm { background: var(--storm); }
+
+.modes { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.modes-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; padding: 3px; background: var(--surface); gap: 3px; }
+.seg button {
+  font: 500 14px var(--font-body); color: var(--muted);
+  background: transparent; border: 0; border-radius: 7px;
+  padding: 6px 12px; cursor: pointer;
+}
+.seg button:hover { color: var(--ink); }
+.seg button:focus-visible { outline: 2px solid var(--bot); outline-offset: 1px; }
+.seg button[aria-pressed="true"] { color: #fff; background: var(--ink); }
+.seg button[data-mode="rush"][aria-pressed="true"] { background: var(--rush); }
+.seg button[data-mode="storm"][aria-pressed="true"] { background: var(--storm); }
+.mode-desc { font-size: 14px; color: var(--muted); margin: 0; max-width: 70ch; }
+
+.mchip { display: none; }
+svg[data-mode="rush"] .mchip.rush, svg[data-mode="storm"] .mchip.storm { display: inline; }
+.mchip-bg.rush { fill: var(--rush); }
+.mchip-bg.storm { fill: var(--storm); }
+.node { transition: opacity .2s ease; }
+svg[data-mode="rush"] .node:not(.has-rush), svg[data-mode="storm"] .node:not(.has-storm) { opacity: .32; }
+
+.callout.rush { border-left-color: var(--rush); background: color-mix(in srgb, var(--rush) 9%, var(--surface)); }
+.callout.rush b { color: var(--rush); }
+.callout.storm { border-left-color: var(--storm); background: color-mix(in srgb, var(--storm) 10%, var(--surface)); }
+.callout.storm b { color: var(--storm); }
+.callout ul { margin: 4px 0 0; padding-left: 16px; gap: 4px; }
+
+.modes-detail { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+.mcard { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--rush); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.mcard.storm { border-top-color: var(--storm); }
+.mcard h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; line-height: 1.2; margin: 0; }
+.mcard > p { margin: 0; color: var(--muted); font-size: 14px; }
+.mgroup { display: flex; flex-direction: column; gap: 6px; }
+.mgroup h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.mgroup ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 14px; }
+.goto {
+  font: 500 11px var(--font-mono); letter-spacing: .03em;
+  color: var(--muted); background: transparent;
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: 0 7px; margin-left: 4px; cursor: pointer; white-space: nowrap;
+}
+.goto:hover { color: var(--ink); border-color: var(--muted); }
+.goto:focus-visible { outline: 2px solid var(--bot); outline-offset: 1px; }
+.trade { font-size: 13.5px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; margin: 0; }
+
 
 .layout {
   display: grid;
@@ -296,7 +351,7 @@ footer { font-size: 12.5px; color: var(--muted); }
   <header>
     <span class="eyebrow">Concept · Telegram bot · workflow design</span>
     <h1>Fare-Bid Ride Bot</h1>
-    <p>Passengers name their price, drivers bid, and the bot returns only what each side needs to decide. There are no human moderators. Trust comes from automatic rules that protect passengers and drivers alike. Select any step on the map.</p>
+    <p>Passengers name their price, drivers bid, and the bot returns only what each side needs to decide. There are no human moderators. Trust comes from automatic rules that protect passengers and drivers alike, including in rush hour and typhoons. Select any step on the map.</p>
   </header>
 
   <div class="gate-note" role="note">
@@ -313,15 +368,94 @@ footer { font-size: 12.5px; color: var(--muted); }
     <span><i class="chip req">Required</i>Pickup gate</span>
     <span><i class="dash"></i>Background link</span>
     <span><i class="dash exc"></i>Exception path</span>
+    <span><i class="chip rush">Rush</i>Changes in rush hour</span>
+    <span><i class="chip storm">Storm</i>Changes under a typhoon signal</span>
+  </div>
+
+  <div class="modes">
+    <span class="modes-label" id="modes-label">Map view</span>
+    <div class="seg" role="group" aria-labelledby="modes-label">
+      <button type="button" data-mode="normal" aria-pressed="true">Normal</button>
+      <button type="button" data-mode="rush" aria-pressed="false">Rush hour</button>
+      <button type="button" data-mode="storm" aria-pressed="false">Typhoon signal</button>
+    </div>
+    <p class="mode-desc" id="mode-desc">The everyday flow. Switch views to see which steps change when demand spikes or a typhoon signal is up.</p>
   </div>
 
   <div class="layout">
     <figure class="map-box">
-      <svg id="map" role="img" aria-label="Swimlane map of the ride flow. Driver and passenger register with phone numbers. Passenger requests with a suggested fare range, the bot broadcasts to drivers whose filters match, drivers bid with an ETA, passenger picks. The bot sends a car photo and pickup code, and both sides must share live location before pickup unlocks. The bot posts a live ETA, the driver arrives, passenger verifies the car and gives the code, ride starts with SOS available, then both rate. A side lane covers free cancels, late cancels, no-show checks by location, safety cancels and SOS."></svg>
+      <svg id="map" role="img" aria-label="Swimlane map of the ride flow. Driver and passenger register with phone numbers. Passenger requests with a suggested fare range, the bot broadcasts to drivers whose filters match, drivers bid with an ETA, passenger picks. The bot sends a car photo and pickup code, and both sides must share live location before pickup unlocks. The bot posts a live ETA, the driver arrives, passenger verifies the car and gives the code, ride starts with SOS available, then both rate. A side lane covers free cancels, late cancels, no-show checks by location, safety cancels, fare changes at pickup and SOS. Rush-hour and typhoon views highlight the steps that change under those conditions."></svg>
     </figure>
 
     <aside class="panel" id="panel" aria-live="polite"></aside>
   </div>
+
+  <section class="modes-detail" aria-label="Rush hour and typhoon rules">
+    <article class="mcard">
+      <h2>Rush hour mode</h2>
+      <p>Bidding already lets prices rise when everyone wants a ride. These rules handle everything around the price.</p>
+      <div class="mgroup">
+        <h3>1. Show the crowd so asks adjust themselves</h3>
+        <ul>
+          <li>Demand signal before posting: requests vs. drivers nearby. <button type="button" class="goto" data-step="req" data-mode="rush">Step 3</button></li>
+          <li>Suggested range uses fares accepted in the last 30 minutes. <button type="button" class="goto" data-step="req" data-mode="rush">Step 3</button></li>
+          <li>No bids after 3 minutes: the bot shows the going rate, one tap reposts higher. <button type="button" class="goto" data-step="list" data-mode="rush">Step 6</button></li>
+        </ul>
+      </div>
+      <div class="mgroup">
+        <h3>2. Keep drivers from drowning in requests</h3>
+        <ul>
+          <li>Requests go to the 15 nearest drivers first, then widen. <button type="button" class="goto" data-step="cast" data-mode="rush">Step 4</button></li>
+          <li>Feed sorted by fare per km or distance to pickup. <button type="button" class="goto" data-step="bid" data-mode="rush">Step 5</button></li>
+          <li>Quiet mode: one digest every 30 seconds. <button type="button" class="goto" data-step="bid" data-mode="rush">Step 5</button></li>
+        </ul>
+      </div>
+      <div class="mgroup">
+        <h3>3. Stop the gaming a rush invites</h3>
+        <ul>
+          <li>One open request per passenger; raising the ask replaces the post. <button type="button" class="goto" data-step="req" data-mode="normal">Step 3</button></li>
+          <li>One active match per driver, except a next pickup near the current drop-off. <button type="button" class="goto" data-step="bid" data-mode="normal">Step 5</button></li>
+          <li>Fare locked at match; asking for more at pickup is flagged. <button type="button" class="goto" data-step="xfare" data-mode="rush">Exception E</button></li>
+          <li>Zero-trip accounts hidden by default while demand is high. <button type="button" class="goto" data-step="list" data-mode="rush">Step 6</button></li>
+        </ul>
+      </div>
+      <div class="mgroup">
+        <h3>4. Take some demand out of the peak</h3>
+        <ul>
+          <li>Scheduled rides: book tomorrow's commute the night before. <button type="button" class="goto" data-step="req" data-mode="rush">Step 3</button></li>
+          <li>Pasabay: two verified passengers going the same way split one car. <button type="button" class="goto" data-step="req" data-mode="rush">Step 3</button></li>
+          <li>Opt-in demand alerts pull nearby off-duty drivers in. <button type="button" class="goto" data-step="cast" data-mode="rush">Step 4</button></li>
+        </ul>
+      </div>
+      <p class="trade">Trade-off: in a rush, whoever pays more rides first. Scheduled rides and pasabay soften that; they don't remove it.</p>
+    </article>
+
+    <article class="mcard storm">
+      <h2>Typhoon signal mode</h2>
+      <p>Open pricing is at its worst in a storm. This is the one place the bot limits price, and the switch is an official signal, not a person.</p>
+      <div class="mgroup">
+        <h3>Trigger</h3>
+        <ul>
+          <li>On automatically when PAGASA raises Tropical Cyclone Wind Signal No. 2 or higher for the pickup area; off when it's lifted. <button type="button" class="goto" data-step="req" data-mode="storm">Step 3</button></li>
+        </ul>
+      </div>
+      <div class="mgroup">
+        <h3>The cap</h3>
+        <ul>
+          <li>Asks and bids are capped at 1.5× the top of the normal suggested range for that route. <button type="button" class="goto" data-step="req" data-mode="storm">Step 3</button></li>
+          <li>Bids above the cap are rejected with the cap shown. Accepting the passenger's ask always works. <button type="button" class="goto" data-step="bid" data-mode="storm">Step 5</button></li>
+        </ul>
+      </div>
+      <div class="mgroup">
+        <h3>What people see</h3>
+        <ul>
+          <li>Drivers see the cap is on before they bid. <button type="button" class="goto" data-step="cast" data-mode="storm">Step 4</button></li>
+          <li>The bid list carries a banner: "Typhoon cap in effect: max ₱420 for this route." <button type="button" class="goto" data-step="list" data-mode="storm">Step 6</button></li>
+        </ul>
+      </div>
+      <p class="trade">Trade-off: a cap can mean fewer drivers out in bad weather. 1.5× keeps a real premium for driving in a storm while ruling out the ₱1,500-for-5-km screenshots.</p>
+    </article>
+  </section>
 
   <footer>Concept and workflow design. Built on the Telegram Bot API. Sample data shown.</footer>
 </div>
@@ -357,6 +491,7 @@ footer { font-size: 12.5px; color: var(--muted); }
         "Passenger sends pickup area, drop-off and ride type (car, motorcycle, tricycle).",
         "Before they type a fare, the bot suggests a range for that distance and ride type. Early on it uses a per-km formula; once trips pile up, it uses the fares drivers actually accepted on similar routes.",
         "The range is a guide, not a rule. The passenger can ask any amount.",
+        "One open request per passenger. Raising the ask replaces the post instead of adding a duplicate.",
         "The exact pickup point stays hidden from drivers until pickup unlocks."
       ],
       sample: "suggest" },
@@ -371,7 +506,8 @@ footer { font-size: 12.5px; color: var(--muted); }
       points: [
         "Driver taps Accept asking price, or replies /bid 230 with a counter-offer.",
         "Bidding attaches the driver's current location (one tap). The bot turns it into an ETA to the pickup area. The location itself is never shown to the passenger.",
-        "Every bid is tied to the driver's user ID, so nobody bids anonymously."
+        "Every bid is tied to the driver's user ID, so nobody bids anonymously.",
+        "One active match per driver. The only exception is a next ride whose pickup is near the current drop-off."
       ] },
     { id: "list", lane: "bot", row: 5, title: "Bid list", sub: "stripped-down output",
       points: [
@@ -383,7 +519,8 @@ footer { font-size: 12.5px; color: var(--muted); }
     { id: "pick", lane: "pax", row: 6, title: "Pick a driver", sub: "runner-ups held 5 min",
       points: [
         "Passenger chooses on price and track record.",
-        "The other bids are held for 5 minutes instead of expiring. If the chosen driver cancels, they come back with one tap."
+        "The other bids are held for 5 minutes instead of expiring. If the chosen driver cancels, they come back with one tap.",
+        "The fare is locked at the accepted bid. Asking for more at pickup gets flagged automatically (exception E)."
       ] },
     { id: "hand", lane: "bot", row: 7, title: "Safety handshake", sub: "photo · code · prompts", safe: true,
       points: [
@@ -475,6 +612,12 @@ footer { font-size: 12.5px; color: var(--muted); }
         "Free for whoever cancels, but it needs a reason.",
         "The other side gets a report flag. Repeated flags trigger a cooldown, so the exemption can't be abused for long."
       ] },
+    { id: "xfare", lane: "exc", row: 13, exc: true, title: "Fare changed", sub: "at pickup · auto-flag",
+      points: [
+        "The fare is locked when the passenger picks a bid.",
+        "If the driver asks for more at pickup, the passenger taps Fare changed in the trip chat. It files a report flag and counts as a driver cancel.",
+        "The passenger gets the runner-up bids back, or can re-broadcast with one tap."
+      ] },
     { id: "xsos", lane: "exc", row: 14, exc: true, title: "SOS", sub: "/sos · emergency",
       points: [
         "Sends both user IDs, the plate, the route and the live location to the sender's emergency contacts.",
@@ -482,6 +625,56 @@ footer { font-size: 12.5px; color: var(--muted); }
       ],
       callouts: [{ kind: "safe", title: "Bot reminder", text: "In immediate danger, call 911." }] }
   ];
+
+  var MODE_NOTES = {
+    rush: {
+      req: [
+        "Before posting, a demand signal: \"High demand near you: 42 requests, 9 drivers nearby.\"",
+        "The suggested range switches to fares accepted in the last 30 minutes, so it rises with the rush and shows why.",
+        "Scheduled rides: commuters book tomorrow's ride the night before, and drivers bid in advance.",
+        "Pasabay (opt-in): two verified passengers heading the same way split one car and one fare. Each does their own pickup code check."
+      ],
+      cast: [
+        "Requests go to the 15 nearest drivers first, and the radius widens only if nobody bids.",
+        "Off-duty drivers who opted in get a demand alert: \"Demand spike near Baclaran.\"",
+        "Messages go through a queue to stay inside Telegram's bot rate limits (roughly 30 messages a second overall, about 1 a second per chat)."
+      ],
+      bid: [
+        "Drivers can sort the feed by fare per km or by distance to pickup.",
+        "Quiet mode: one digest every 30 seconds instead of a ping per request.",
+        "One active match per driver still applies. No accepting three rides and keeping the best one."
+      ],
+      list: [
+        "Accounts with zero trips are hidden by default while demand is high. Passengers can switch them back on.",
+        "No bids after 3 minutes: the bot shows what rides from the area are being accepted at right now, and one tap reposts with a higher ask."
+      ],
+      xfare: [
+        "This happens most in a rush, so the Fare changed button sits right in the trip chat."
+      ]
+    },
+    storm: {
+      req: [
+        "Turns on automatically when PAGASA raises Tropical Cyclone Wind Signal No. 2 or higher for the pickup area, and off when it's lifted. No person flips the switch.",
+        "Asks are capped at 1.5× the top of the normal suggested range. The bot shows the cap and why it's there."
+      ],
+      cast: [
+        "Drivers see that the typhoon cap is on, and the cap for this route, before they bid."
+      ],
+      bid: [
+        "Bids above the cap are rejected with a message showing the cap.",
+        "Accepting the passenger's ask always works."
+      ],
+      list: [
+        "A banner tops the bid list: \"Typhoon cap in effect: max ₱420 for this route.\""
+      ]
+    }
+  };
+  var MODE_INFO = {
+    normal: { label: "Normal", desc: "The everyday flow. Switch views to see which steps change when demand spikes or a typhoon signal is up." },
+    rush: { label: "In rush hour", desc: "Rush hour: highlighted steps change when requests far outnumber drivers nearby. Faded steps work as usual." },
+    storm: { label: "Under a typhoon signal", desc: "Typhoon signal: a fare cap switches on automatically with PAGASA Wind Signal No. 2 or higher. Highlighted steps change." }
+  };
+  var mode = "normal";
 
   var idx = {};
   STEPS.forEach(function (s, i) { idx[s.id] = i; });
@@ -511,6 +704,7 @@ footer { font-size: 12.5px; color: var(--muted); }
     { from: "gate",  to: "xlate" },
     { from: "here",  to: "xnoshow" },
     { from: "board", to: "xsafe" },
+    { from: "code",  to: "xfare" },
     { from: "ride",  to: "xsos" }
   ];
 
@@ -609,7 +803,8 @@ footer { font-size: 12.5px; color: var(--muted); }
   STEPS.forEach(function (s, i) {
     var p = pos(s.id);
     var x = p.cx - W / 2;
-    var g = el("g", { "class": "node " + s.lane + (s.gate ? " gate" : ""), tabindex: "0", role: "button",
+    var mcls = (MODE_NOTES.rush[s.id] ? " has-rush" : "") + (MODE_NOTES.storm[s.id] ? " has-storm" : "");
+    var g = el("g", { "class": "node " + s.lane + (s.gate ? " gate" : "") + mcls, tabindex: "0", role: "button",
       "aria-label": (s.exc ? "Exception " : "Step ") + s.label + ": " + s.title }, nodeLayer);
     el("rect", { x: x, y: p.top, width: W, height: H, rx: 10, "class": "box" }, g);
     el("circle", { cx: x + 19, cy: p.top + H / 2, r: 11, "class": "num-bg" }, g);
@@ -627,6 +822,13 @@ footer { font-size: 12.5px; color: var(--muted); }
       var ct = el("text", { x: x + W - 6 - cw / 2, y: p.top + 3.5, "text-anchor": "middle", "class": "chip-text" }, g);
       ct.textContent = text;
     }
+    [["rush", "RUSH", 38], ["storm", "STORM", 44]].forEach(function (m) {
+      if (!MODE_NOTES[m[0]][s.id]) return;
+      var mg = el("g", { "class": "mchip " + m[0] }, g);
+      el("rect", { x: x + 8, y: p.top - 8, width: m[2], height: 16, rx: 4, "class": "mchip-bg " + m[0] }, mg);
+      var mt = el("text", { x: x + 8 + m[2] / 2, y: p.top + 3.5, "text-anchor": "middle", "class": "chip-text" }, mg);
+      mt.textContent = m[1];
+    });
     g.addEventListener("click", function () { select(i, false); });
     g.addEventListener("keydown", function (ev) {
       if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(i, false); }
@@ -667,6 +869,25 @@ footer { font-size: 12.5px; color: var(--muted); }
   }
 
   function sampleSuggest() {
+    if (mode === "rush") {
+      return '<div class="tg" aria-label="Sample fare suggestion in rush hour">' +
+        '<div class="tg-head">What the passenger sees · rush hour</div>' +
+        '<div class="tg-row"><span class="warn">High demand near you: 42 requests, 9 drivers nearby</span>' +
+        '<span class="who">Baclaran → BGC · Car · ~9 km</span>' +
+        '<span class="fare">Suggested now: ₱300–₱340</span>' +
+        '<span class="meta">Based on fares accepted in the last 30 min</span>' +
+        '<span class="meta">Or: schedule for later · share a ride (pasabay)</span></div>' +
+        '<div class="tg-note">Sample data.</div></div>';
+    }
+    if (mode === "storm") {
+      return '<div class="tg" aria-label="Sample fare suggestion under a typhoon signal">' +
+        '<div class="tg-head">What the passenger sees · typhoon signal</div>' +
+        '<div class="tg-row"><span class="warn">PAGASA Wind Signal No. 2 in your area · fare cap on</span>' +
+        '<span class="who">Baclaran → BGC · Car · ~9 km</span>' +
+        '<span class="fare">Suggested: ₱220–₱280 · cap ₱420</span>' +
+        '<span class="meta">Cap = 1.5× the top of the normal range</span></div>' +
+        '<div class="tg-note">Sample data.</div></div>';
+    }
     return '<div class="tg" aria-label="Sample fare suggestion as the passenger sees it">' +
       '<div class="tg-head">What the passenger sees · before entering a fare</div>' +
       '<div class="tg-row"><span class="who">Baclaran → BGC · Car · ~9 km</span>' +
@@ -696,6 +917,10 @@ footer { font-size: 12.5px; color: var(--muted); }
     if (s.sample === "request") h += sampleRequest();
     if (s.sample === "suggest") h += sampleSuggest();
     if (s.sample === "eta") h += sampleEta();
+    if (mode !== "normal" && MODE_NOTES[mode][s.id]) {
+      h += '<div class="callout ' + mode + '"><b>' + esc(MODE_INFO[mode].label) + '</b><ul>' +
+           MODE_NOTES[mode][s.id].map(function (p) { return '<li>' + esc(p) + '</li>'; }).join("") + '</ul></div>';
+    }
     (s.callouts || []).forEach(function (c) {
       h += '<div class="callout ' + (c.kind === "req" ? "req" : "") + '"><b>' + esc(c.title) + '</b>' + esc(c.text) + '</div>';
     });
@@ -717,6 +942,27 @@ footer { font-size: 12.5px; color: var(--muted); }
     }
   }
 
+  var segBtns = Array.prototype.slice.call(document.querySelectorAll(".seg button"));
+  var modeDesc = document.getElementById("mode-desc");
+  function setMode(m) {
+    mode = m;
+    svg.setAttribute("data-mode", m);
+    segBtns.forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-mode") === m)); });
+    modeDesc.textContent = MODE_INFO[m].desc;
+    render();
+  }
+  segBtns.forEach(function (b) {
+    b.addEventListener("click", function () { setMode(b.getAttribute("data-mode")); });
+  });
+  Array.prototype.slice.call(document.querySelectorAll(".goto")).forEach(function (b) {
+    b.addEventListener("click", function () {
+      current = idx[b.getAttribute("data-step")];
+      setMode(b.getAttribute("data-mode"));
+      document.querySelector(".map-box").scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    });
+  });
+
+  svg.setAttribute("data-mode", "normal");
   render();
 })();
 </script>
