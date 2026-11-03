@@ -266,6 +266,7 @@ header p { margin: 0; color: var(--muted); }
 .tg-row .fare { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
 .tg-row .meta { color: var(--muted); font-variant-numeric: tabular-nums; }
 .tg-row .warn { color: var(--safe); }
+.tg-row .eta { color: var(--drv); font-weight: 500; }
 .tg-note { font-family: var(--font-body); font-size: 12px; color: var(--muted); }
 
 .nav { display: flex; gap: 8px; margin-top: 2px; }
@@ -316,7 +317,7 @@ footer { font-size: 12.5px; color: var(--muted); }
 
   <div class="layout">
     <figure class="map-box">
-      <svg id="map" role="img" aria-label="Swimlane map of the ride flow. Driver and passenger register with phone numbers. Passenger requests, the bot broadcasts to drivers whose filters match, drivers bid, passenger picks. The bot sends a car photo and pickup code, and both sides must share live location before pickup unlocks. Driver arrives, passenger verifies the car and gives the code, ride starts with SOS available, then both rate. A side lane covers free cancels, late cancels, no-show checks by location, safety cancels and SOS."></svg>
+      <svg id="map" role="img" aria-label="Swimlane map of the ride flow. Driver and passenger register with phone numbers. Passenger requests with a suggested fare range, the bot broadcasts to drivers whose filters match, drivers bid with an ETA, passenger picks. The bot sends a car photo and pickup code, and both sides must share live location before pickup unlocks. The bot posts a live ETA, the driver arrives, passenger verifies the car and gives the code, ride starts with SOS available, then both rate. A side lane covers free cancels, late cancels, no-show checks by location, safety cancels and SOS."></svg>
     </figure>
 
     <aside class="panel" id="panel" aria-live="polite"></aside>
@@ -351,25 +352,31 @@ footer { font-size: 12.5px; color: var(--muted); }
         "Optional emergency contacts for /sos.",
         "Account age starts counting from here."
       ] },
-    { id: "req", lane: "pax", row: 2, title: "Request a ride", sub: "/ride",
+    { id: "req", lane: "pax", row: 2, title: "Request a ride", sub: "/ride · suggested range",
       points: [
-        "Passenger sends pickup area, drop-off, ride type (car, motorcycle, tricycle) and their asking fare.",
+        "Passenger sends pickup area, drop-off and ride type (car, motorcycle, tricycle).",
+        "Before they type a fare, the bot suggests a range for that distance and ride type. Early on it uses a per-km formula; once trips pile up, it uses the fares drivers actually accepted on similar routes.",
+        "The range is a guide, not a rule. The passenger can ask any amount.",
         "The exact pickup point stays hidden from drivers until pickup unlocks."
-      ] },
+      ],
+      sample: "suggest" },
     { id: "cast", lane: "bot", row: 3, title: "Broadcast", sub: "matched to filters",
       points: [
         "Sent only to drivers registered for that ride type and area, and only to drivers whose filters this passenger passes.",
-        "Drivers see the passenger's track record next to the route, the same way passengers see the driver's."
+        "Drivers see the passenger's track record next to the route, the same way passengers see the driver's.",
+        "Drivers also see where the ask sits against the suggested range, so a lowball offer is obvious."
       ],
       sample: "request" },
-    { id: "bid", lane: "drv", row: 4, title: "Bid", sub: "accept or counter",
+    { id: "bid", lane: "drv", row: 4, title: "Bid", sub: "fare + current location",
       points: [
         "Driver taps Accept asking price, or replies /bid 230 with a counter-offer.",
+        "Bidding attaches the driver's current location (one tap). The bot turns it into an ETA to the pickup area. The location itself is never shown to the passenger.",
         "Every bid is tied to the driver's user ID, so nobody bids anonymously."
       ] },
     { id: "list", lane: "bot", row: 5, title: "Bid list", sub: "stripped-down output",
       points: [
-        "One line per bid: username, ride type, vehicle color and plate, fare, trip count, rating, cancel rate, account age.",
+        "One line per bid: username, ride type, vehicle color and plate, fare, ETA to pickup, trip count, rating, cancel rate, account age.",
+        "Price and ETA side by side let the passenger trade a cheaper fare against a longer wait.",
         "Brand-new accounts get a caution flag. Nothing is blocked; the signal is shown and the passenger decides."
       ],
       sample: "bids" },
@@ -407,12 +414,19 @@ footer { font-size: 12.5px; color: var(--muted); }
         "Both sides are told the trip is being logged: user IDs, time, route and pickup point."
       ],
       callouts: [{ kind: "req", title: "Pickup gate", text: "Both live locations on, or no pickup. This is the one rule with no exceptions." }] },
-    { id: "here", lane: "drv", row: 10, title: "Arrive", sub: "taps \"I'm here\"",
+    { id: "eta", lane: "bot", row: 10, title: "Live ETA", sub: "updates to pickup",
+      points: [
+        "From the driver's live location, the bot posts an ETA to the exact pickup point in the trip chat and refreshes it every minute or so.",
+        "If the ETA climbs well past what the driver's bid promised, the passenger is told and can cancel without penalty.",
+        "Without the driver's live location there is no ETA, which is one more reason the pickup gate requires it."
+      ],
+      sample: "eta" },
+    { id: "here", lane: "drv", row: 11, title: "Arrive", sub: "taps \"I'm here\"",
       points: [
         "Driver taps I'm here. The bot only accepts it if the driver's live location is near the pickup point.",
         "This starts a 5-minute wait timer for the no-show check."
       ] },
-    { id: "board", lane: "pax", row: 11, title: "Verify and board", sub: "check car · give code", safe: true,
+    { id: "board", lane: "pax", row: 12, title: "Verify and board", sub: "check car · give code", safe: true,
       points: [
         "Passenger compares the plate and color with the registered photo.",
         "If they match, the passenger tells the driver the pickup code."
@@ -421,18 +435,18 @@ footer { font-size: 12.5px; color: var(--muted); }
         { kind: "safe", title: "Bot reminder", text: "Check that the plate and color match before you get in. If they don't, don't board." },
         { kind: "safe", title: "Bot reminder", text: "Screenshot the live location and send it to someone you trust." }
       ] },
-    { id: "code", lane: "drv", row: 12, title: "Enter pickup code", sub: "ride starts", safe: true,
+    { id: "code", lane: "drv", row: 13, title: "Enter pickup code", sub: "ride starts", safe: true,
       points: [
         "Driver enters the code. A correct code confirms the right passenger is in the right car, and the ride starts.",
         "A wrong code lets either side make a free safety cancel."
       ] },
-    { id: "ride", lane: "bot", row: 13, title: "Ride in progress", sub: "/sos available",
+    { id: "ride", lane: "bot", row: 14, title: "Ride in progress", sub: "/sos available",
       points: [
         "The driver's live location stays on for the whole trip, and the trip is logged.",
         "Either side can send /sos at any time.",
         "The fare is settled between passenger and driver."
       ] },
-    { id: "rate", lane: "bot", row: 14, title: "Rate and cool down", sub: "reputation loop",
+    { id: "rate", lane: "bot", row: 15, title: "Rate and cool down", sub: "reputation loop",
       points: [
         "After the ride, both sides give a thumbs up or down, tied to Telegram user ID.",
         "Trip count, rating and cancel rate feed every future bid line and every future request.",
@@ -450,18 +464,18 @@ footer { font-size: 12.5px; color: var(--muted); }
         "3 late cancels in 24 hours hides the account from new matches for a few hours.",
         "The other side gets the runner-up bids back if still within 5 minutes, or can re-broadcast with one tap."
       ] },
-    { id: "xnoshow", lane: "exc", row: 10, exc: true, title: "No-show check", sub: "by live location",
+    { id: "xnoshow", lane: "exc", row: 11, exc: true, title: "No-show check", sub: "by live location",
       points: [
         "Driver's location is near the pickup and they've waited 5 minutes: they can mark a passenger no-show, which counts against the passenger.",
         "Driver's location never came near the pickup: it counts as a driver cancel, whatever the driver claims.",
         "An \"I'm here\" sent from far away is rejected."
       ] },
-    { id: "xsafe", lane: "exc", row: 11, exc: true, title: "Safety cancel", sub: "plate or code mismatch",
+    { id: "xsafe", lane: "exc", row: 12, exc: true, title: "Safety cancel", sub: "plate or code mismatch",
       points: [
         "Free for whoever cancels, but it needs a reason.",
         "The other side gets a report flag. Repeated flags trigger a cooldown, so the exemption can't be abused for long."
       ] },
-    { id: "xsos", lane: "exc", row: 13, exc: true, title: "SOS", sub: "/sos · emergency",
+    { id: "xsos", lane: "exc", row: 14, exc: true, title: "SOS", sub: "/sos · emergency",
       points: [
         "Sends both user IDs, the plate, the route and the live location to the sender's emergency contacts.",
         "Works for passengers and drivers."
@@ -485,7 +499,8 @@ footer { font-size: 12.5px; color: var(--muted); }
     { from: "hand", to: "dlive", label: "prompt" },
     { from: "plive", to: "gate", label: "live ✓", route: "gap" },
     { from: "dlive", to: "gate", label: "live ✓", route: "gap" },
-    { from: "gate", to: "here", label: "pickup point" },
+    { from: "gate", to: "eta", label: "pickup point" },
+    { from: "eta", to: "here", label: "driver en route" },
     { from: "here", to: "board", label: "\"I'm here\"", route: "gap" },
     { from: "board", to: "code", label: "tells code" },
     { from: "code", to: "ride", label: "code ✓", route: "gap" },
@@ -625,15 +640,16 @@ footer { font-size: 12.5px; color: var(--muted); }
 
   function sampleBids() {
     var rows = [
-      { who: "@migs_drives", veh: "Car · White Vios · NAB 1234", fare: "₱250", meta: "112 trips · 96% 👍 · 2% cancel · joined 1 yr 2 mo" },
-      { who: "@jun.rides", veh: "Car · Grey Mirage · DXK 5521", fare: "₱230", meta: "38 trips · 92% 👍 · 11% cancel · joined 7 mo" },
-      { who: "@newdriver_88", veh: "Car · Red Wigo · LTR 9087", fare: "₱180", meta: "0 trips · joined 2 days", warn: "New account, no ride history. Proceed with caution." }
+      { who: "@migs_drives", veh: "Car · White Vios · NAB 1234", fare: "₱250", eta: "~4 min away", meta: "112 trips · 96% 👍 · 2% cancel · joined 1 yr 2 mo" },
+      { who: "@jun.rides", veh: "Car · Grey Mirage · DXK 5521", fare: "₱230", eta: "~12 min away", meta: "38 trips · 92% 👍 · 11% cancel · joined 7 mo" },
+      { who: "@newdriver_88", veh: "Car · Red Wigo · LTR 9087", fare: "₱180", eta: "~7 min away", meta: "0 trips · joined 2 days", warn: "New account, no ride history. Proceed with caution." }
     ];
     var h = '<div class="tg" aria-label="Sample bid list as the passenger sees it">';
     h += '<div class="tg-head">What the passenger sees · 3 bids · Baclaran → BGC · Car · you asked ₱250</div>';
     rows.forEach(function (r) {
       h += '<div class="tg-row"><span class="who">' + esc(r.who) + ' <span class="fare">· ' + esc(r.fare) + '</span></span>' +
            '<span class="meta">' + esc(r.veh) + '</span>' +
+           '<span class="eta">' + esc(r.eta) + '</span>' +
            '<span class="meta">' + esc(r.meta) + '</span>' +
            (r.warn ? '<span class="warn">⚠ ' + esc(r.warn) + '</span>' : '') + '</div>';
     });
@@ -644,9 +660,28 @@ footer { font-size: 12.5px; color: var(--muted); }
     return '<div class="tg" aria-label="Sample ride request as a driver sees it">' +
       '<div class="tg-head">What the driver sees · new request</div>' +
       '<div class="tg-row"><span class="who">Baclaran → BGC <span class="fare">· asks ₱250</span></span>' +
-      '<span class="meta">Car · pickup area only</span>' +
+      '<span class="meta">Car · pickup area only · you are ~4 min away</span>' +
+      '<span class="meta">Ask is within the suggested range (₱220–₱280)</span>' +
       '<span class="meta">Passenger: 23 trips · 100% 👍 · 0% cancel · joined 5 mo</span></div>' +
       '<div class="tg-note">Exact pickup point is sent only after both live locations are on. Sample data.</div></div>';
+  }
+
+  function sampleSuggest() {
+    return '<div class="tg" aria-label="Sample fare suggestion as the passenger sees it">' +
+      '<div class="tg-head">What the passenger sees · before entering a fare</div>' +
+      '<div class="tg-row"><span class="who">Baclaran → BGC · Car · ~9 km</span>' +
+      '<span class="fare">Suggested: ₱220–₱280</span>' +
+      '<span class="meta">Based on 14 accepted trips of similar distance this week</span>' +
+      '<span class="meta">Asks below the range usually get fewer bids.</span></div>' +
+      '<div class="tg-note">Sample data. Before enough trips exist, the range comes from a per-km formula for each ride type.</div></div>';
+  }
+  function sampleEta() {
+    return '<div class="tg" aria-label="Sample live ETA message in the trip chat">' +
+      '<div class="tg-head">Trip chat · updates as the driver moves</div>' +
+      '<div class="tg-row"><span class="who">@migs_drives · White Vios · NAB 1234</span>' +
+      '<span class="fare">Arriving in ~3 min · 1.2 km away</span>' +
+      '<span class="meta">Bid promised ~4 min · on time</span></div>' +
+      '<div class="tg-note">Sample data. ETA comes from a routing service, so it follows roads, not a straight line.</div></div>';
   }
 
   function render() {
@@ -659,6 +694,8 @@ footer { font-size: 12.5px; color: var(--muted); }
     h += '<ul>' + s.points.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join("") + '</ul>';
     if (s.sample === "bids") h += sampleBids();
     if (s.sample === "request") h += sampleRequest();
+    if (s.sample === "suggest") h += sampleSuggest();
+    if (s.sample === "eta") h += sampleEta();
     (s.callouts || []).forEach(function (c) {
       h += '<div class="callout ' + (c.kind === "req" ? "req" : "") + '"><b>' + esc(c.title) + '</b>' + esc(c.text) + '</div>';
     });
